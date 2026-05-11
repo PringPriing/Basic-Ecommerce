@@ -1,0 +1,75 @@
+@page "/products/{Id:int}"
+@inject ProductApiService ProductApi
+@inject CartApiService CartApi
+@inject NavigationManager Nav
+
+<PageTitle>@(product?.Name ?? "Product") — E-Shop</PageTitle>
+
+@if (product == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-5">
+            <img src="@(product.ImageUrl ?? "https://placehold.co/500x400?text=No+Image")"
+                 class="img-fluid rounded shadow" alt="@product.Name" />
+        </div>
+        <div class="col-md-7">
+            <h2>@product.Name</h2>
+            <h4 class="text-success">$@product.Price.ToString("F2")</h4>
+            <p>@product.Description</p>
+
+            <div class="mb-3">
+                @foreach (var cat in product.Categories)
+                {
+                    <span class="badge bg-secondary me-1">@cat.Name</span>
+                }
+            </div>
+
+            <p class="text-muted">In stock: @product.StockQuantity</p>
+
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <label class="form-label mb-0">Qty:</label>
+                <input type="number" class="form-control" style="width:80px;" @bind="quantity" min="1" max="@product.StockQuantity" />
+            </div>
+
+            <AuthorizeView>
+                <Authorized>
+                    <button class="btn btn-primary" @onclick="AddToCart" disabled="@adding">
+                        @(adding ? "Adding..." : "Add to Cart")
+                    </button>
+                </Authorized>
+                <NotAuthorized>
+                    <a href="/login" class="btn btn-outline-primary">Login to purchase</a>
+                </NotAuthorized>
+            </AuthorizeView>
+
+            <button class="btn btn-link ms-2" @onclick="GoBack">← Back</button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private ProductDto? product;
+    private int quantity = 1;
+    private bool adding;
+
+    protected override async Task OnInitializedAsync()
+    {
+        product = await ProductApi.GetByIdAsync(Id);
+    }
+
+    private void GoBack() => Nav.NavigateTo("/products");
+
+    private async Task AddToCart()
+    {
+        adding = true;
+        await CartApi.AddItemAsync(new AddToCartRequest { ProductId = Id, Quantity = quantity });
+        adding = false;
+        Nav.NavigateTo("/cart");
+    }
+}

@@ -1,0 +1,164 @@
+@page "/products"
+@inject ProductApiService ProductApi
+@inject CategoryApiService CategoryApi
+
+<PageTitle>Products — E-Shop</PageTitle>
+
+<h2>Products</h2>
+
+<div class="row mb-3 g-2">
+    <div class="col-md-5 position-relative">
+        <input class="form-control" placeholder="Search by name..."
+               @bind="searchName" @bind:event="oninput"
+               @onkeyup="OnSearchKey" @onfocusout="OnInputBlur" />
+        @if (suggestions.Any())
+        {
+            <div class="dropdown-menu show w-100 shadow-sm"
+                 style="max-height: 280px; overflow-y: auto; z-index: 1050;">
+                @foreach (var s in suggestions)
+                {
+                    <button type="button" class="dropdown-item d-flex align-items-center gap-2 py-2"
+                            @onclick="() => SelectSuggestion(s)">
+                        @if (!string.IsNullOrEmpty(s.ImageUrl))
+                        {
+                            <img src="@s.ImageUrl" width="36" height="36"
+                                 style="object-fit: cover; border-radius: 4px; flex-shrink: 0;" alt="" />
+                        }
+                        <span class="flex-grow-1">@s.Name</span>
+                        <small class="text-muted">$@s.Price.ToString("F2")</small>
+                    </button>
+                }
+            </div>
+        }
+    </div>
+    <div class="col-md-4">
+        <select class="form-select" @bind="selectedCategoryId" @bind:after="OnCategoryChanged">
+            <option value="">All Categories</option>
+            @if (categories != null)
+            {
+                @foreach (var cat in categories)
+                {
+                    <option value="@cat.Id">@cat.Name</option>
+                }
+            }
+        </select>
+    </div>
+    <div class="col-md-3">
+        <button class="btn btn-primary w-100" @onclick="OnSearchClick">Search</button>
+    </div>
+</div>
+
+@if (result == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (!result.Items.Any())
+{
+    <p class="text-muted">No products found.</p>
+}
+else
+{
+    <p class="text-muted">Showing @result.Items.Count of @result.TotalCount products</p>
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        @foreach (var product in result.Items)
+        {
+            <div class="col">
+                <ProductCard Product="product" />
+            </div>
+        }
+    </div>
+
+    <div class="mt-4">
+        <Pagination CurrentPage="result.Page" TotalPages="result.TotalPages" OnPageChanged="OnPageChanged" />
+    </div>
+}
+
+@code {
+    private PagedResult<ProductSummaryDto>? result;
+    private IList<CategoryDto>? categories;
+    private IList<ProductSummaryDto> suggestions = [];
+    private string searchName = string.Empty;
+    private int? selectedCategoryId;
+    private int currentPage = 1;
+    private System.Timers.Timer? debounce;
+
+    protected override async Task OnInitializedAsync()
+    {
+        categories = await CategoryApi.GetAllAsync();
+        await LoadProducts();
+    }
+
+    private void OnSearchKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            suggestions = [];
+            return;
+        }
+
+        debounce?.Dispose();
+        debounce = new System.Timers.Timer(400);
+        debounce.Elapsed += async (_, __) =>
+        {
+            debounce.Dispose();
+            currentPage = 1;
+            await InvokeAsync(async () =>
+            {
+                await Task.WhenAll(LoadProducts(), LoadSuggestions());
+                StateHasChanged();
+            });
+        };
+        debounce.Start();
+    }
+
+    private async Task LoadSuggestions()
+    {
+        suggestions = await ProductApi.SuggestAsync(searchName);
+    }
+
+    private async Task SelectSuggestion(ProductSummaryDto suggestion)
+    {
+        searchName = suggestion.Name;
+        suggestions = [];
+        currentPage = 1;
+        await LoadProducts();
+    }
+
+    private async Task OnInputBlur()
+    {
+        await Task.Delay(200);
+        suggestions = [];
+        StateHasChanged();
+    }
+
+    private async Task OnSearchClick()
+    {
+        suggestions = [];
+        currentPage = 1;
+        await LoadProducts();
+    }
+
+    private async Task OnCategoryChanged()
+    {
+        suggestions = [];
+        currentPage = 1;
+        await LoadProducts();
+    }
+
+    private async Task LoadProducts()
+    {
+        result = await ProductApi.SearchAsync(new ProductSearchRequest
+        {
+            Name = searchName,
+            CategoryId = selectedCategoryId,
+            Page = currentPage,
+            PageSize = 9
+        });
+    }
+
+    private async Task OnPageChanged(int page)
+    {
+        currentPage = page;
+        await LoadProducts();
+    }
+}

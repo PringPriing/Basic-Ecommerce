@@ -1,0 +1,227 @@
+@page "/admin/products"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient Http
+@inject CategoryApiService CategoryApi
+@inject ToastService ToastSvc
+
+<PageTitle>Manage Products — E-Shop Admin</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Manage Products</h2>
+    <button class="btn btn-success btn-sm" @onclick="ShowCreate">+ Add Product</button>
+</div>
+
+@if (showForm)
+{
+    <div class="card mb-4 p-3">
+        <h5>@(editingId == null ? "New Product" : "Edit Product")</h5>
+        <div class="row g-2">
+            <div class="col-md-6">
+                <label class="form-label">Name</label>
+                <input class="form-control" @bind="formName" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Price</label>
+                <input class="form-control" type="number" step="0.01" @bind="formPrice" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Stock</label>
+                <input class="form-control" type="number" @bind="formStock" />
+            </div>
+            <div class="col-12">
+                <label class="form-label">Description</label>
+                <textarea class="form-control" rows="2" @bind="formDesc"></textarea>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Categories</label>
+                @if (categories != null)
+                {
+                    <div class="border rounded p-2" style="max-height:160px; overflow-y:auto;">
+                        @foreach (var cat in categories)
+                        {
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox"
+                                       id="cat_@cat.Id"
+                                       checked="@selectedCategoryIds.Contains(cat.Id)"
+                                       @onchange="e => ToggleCategory(cat.Id, (bool)e.Value!)" />
+                                <label class="form-check-label" for="cat_@cat.Id">@cat.Name</label>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+            @if (editingId != null)
+            {
+                <div class="col-md-6">
+                    <label class="form-label">Product Image</label>
+                    <InputFile OnChange="OnFileSelected" class="form-control" accept="image/*" />
+                    @if (imageUploading) { <small class="text-info">Uploading...</small> }
+                </div>
+            }
+        </div>
+        <div class="d-flex gap-2 mt-3">
+            <button class="btn btn-primary btn-sm" @onclick="Save">Save</button>
+            <button class="btn btn-secondary btn-sm" @onclick="CancelForm">Cancel</button>
+        </div>
+    </div>
+}
+
+@if (result == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Name</th><th>Price</th><th>Stock</th><th>Active</th><th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var p in result.Items)
+            {
+                <tr>
+                    <td>@p.Name</td>
+                    <td>$@p.Price.ToString("F2")</td>
+                    <td>@p.ShortDescription</td>
+                    <td><span class="badge @(p.IsActive ? "bg-success" : "bg-secondary")">@(p.IsActive ? "Active" : "Inactive")</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-secondary me-1" @onclick="() => StartEdit(p.Id)">Edit</button>
+                        <button class="btn btn-sm btn-outline-danger" @onclick="() => Delete(p.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <Pagination CurrentPage="result.Page" TotalPages="result.TotalPages" OnPageChanged="OnPageChanged" />
+}
+
+@code {
+    private PagedResult<ProductSummaryDto>? result;
+    private IList<CategoryDto>? categories;
+    private bool showForm;
+    private int? editingId;
+    private string formName = "", formDesc = "";
+    private decimal formPrice;
+    private int formStock;
+    private List<int> selectedCategoryIds = [];
+    private bool imageUploading;
+    private IBrowserFile? selectedFile;
+    private int currentPage = 1;
+
+    protected override async Task OnInitializedAsync()
+    {
+        categories = await CategoryApi.GetAllAsync();
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        var response = await Http.GetFromJsonAsync<PagedResult<ProductSummaryDto>>($"api/products?Page={currentPage}&PageSize=10");
+        result = response;
+    }
+
+    private void ShowCreate()
+    {
+        editingId = null;
+        formName = ""; formDesc = ""; formPrice = 0; formStock = 0;
+        selectedCategoryIds.Clear();
+        showForm = true;
+    }
+
+    private async Task StartEdit(int id)
+    {
+        var product = await Http.GetFromJsonAsync<ProductDto>($"api/products/{id}");
+        if (product == null) return;
+        editingId = id;
+        formName = product.Name;
+        formDesc = product.Description;
+        formPrice = product.Price;
+        formStock = product.StockQuantity;
+        selectedCategoryIds = product.Categories.Select(c => c.Id).ToList();
+        showForm = true;
+    }
+
+    private void CancelForm() { showForm = false; editingId = null; }
+
+    private void ToggleCategory(int categoryId, bool isChecked)
+    {
+        if (isChecked)
+            selectedCategoryIds.Add(categoryId);
+        else
+            selectedCategoryIds.Remove(categoryId);
+    }
+
+    private async Task Save()
+    {
+        if (editingId == null)
+        {
+            var request = new CreateProductRequest
+            {
+                Name = formName, Description = formDesc,
+                Price = formPrice, StockQuantity = formStock,
+                CategoryIds = selectedCategoryIds
+            };
+            var response = await Http.PostAsJsonAsync("api/products", request);
+            if (response.IsSuccessStatusCode)
+            {
+                var created = await response.Content.ReadFromJsonAsync<ProductDto>();
+                if (created != null && selectedFile != null) await UploadImage(created.Id);
+                ToastSvc.Show("Product created successfully.");
+            }
+            else
+            {
+                ToastSvc.Show("Failed to create product.", ToastType.Error);
+            }
+        }
+        else
+        {
+            var request = new UpdateProductRequest
+            {
+                Name = formName, Description = formDesc,
+                Price = formPrice, StockQuantity = formStock,
+                IsActive = true, CategoryIds = selectedCategoryIds
+            };
+            var response = await Http.PutAsJsonAsync($"api/products/{editingId}", request);
+            if (response.IsSuccessStatusCode)
+            {
+                if (selectedFile != null) await UploadImage(editingId.Value);
+                ToastSvc.Show("Product updated successfully.");
+            }
+            else
+            {
+                ToastSvc.Show("Failed to update product.", ToastType.Error);
+            }
+        }
+        showForm = false;
+        await LoadAsync();
+    }
+
+    private void OnFileSelected(InputFileChangeEventArgs e) => selectedFile = e.File;
+
+    private async Task UploadImage(int productId)
+    {
+        if (selectedFile == null) return;
+        imageUploading = true;
+        var content = new MultipartFormDataContent();
+        var stream = selectedFile.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+        var streamContent = new StreamContent(stream);
+        streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(selectedFile.ContentType);
+        content.Add(streamContent, "file", selectedFile.Name);
+        await Http.PostAsync($"api/products/{productId}/image", content);
+        imageUploading = false;
+    }
+
+    private async Task Delete(int id)
+    {
+        await Http.DeleteAsync($"api/products/{id}");
+        await LoadAsync();
+    }
+
+    private async Task OnPageChanged(int page)
+    {
+        currentPage = page;
+        await LoadAsync();
+    }
+}

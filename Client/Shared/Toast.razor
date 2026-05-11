@@ -1,0 +1,33 @@
+@implements IDisposable
+@inject ToastService ToastSvc
+
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+    @foreach (var toast in ToastSvc.Toasts)
+    {
+        <div class="toast show align-items-center text-white border-0 mb-2 @CssClass(toast.Type)" role="alert">
+            <div class="d-flex">
+                <div class="toast-body">@toast.Message</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                        @onclick="() => ToastSvc.Dismiss(toast.Id)"></button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    protected override void OnInitialized() =>
+        ToastSvc.OnChange += OnToastChanged;
+
+    private void OnToastChanged() =>
+        InvokeAsync(StateHasChanged);
+
+    private static string CssClass(ToastType type) => type switch
+    {
+        ToastType.Success => "bg-success",
+        ToastType.Error   => "bg-danger",
+        _                 => "bg-info"
+    };
+
+    public void Dispose() =>
+        ToastSvc.OnChange -= OnToastChanged;
+}

@@ -1,0 +1,37 @@
+@page "/"
+@inject ProductApiService ProductApi
+
+<PageTitle>E-Shop — Home</PageTitle>
+
+<div class="py-4">
+    <h1 class="display-5 fw-bold">Welcome to E-Shop</h1>
+    <p class="lead text-muted">Browse our curated collection of products.</p>
+    <a href="/products" class="btn btn-primary btn-lg">Shop Now</a>
+</div>
+
+<h3 class="mt-4">Featured Products</h3>
+
+@if (featured == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        @foreach (var product in featured.Items)
+        {
+            <div class="col">
+                <ProductCard Product="product" />
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private PagedResult<ProductSummaryDto>? featured;
+
+    protected override async Task OnInitializedAsync()
+    {
+        featured = await ProductApi.SearchAsync(new ProductSearchRequest { PageSize = 6 });
+    }
+}

@@ -1,0 +1,77 @@
+@page "/register"
+@inject AuthService AuthSvc
+@inject CustomAuthStateProvider AuthProvider
+@inject NavigationManager Nav
+
+<PageTitle>Register — E-Shop</PageTitle>
+
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <h2 class="mb-4">Create Account</h2>
+
+        @if (errors.Any())
+        {
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    @foreach (var e in errors)
+                    {
+                        <li>@e</li>
+                    }
+                </ul>
+            </div>
+        }
+
+        <EditForm Model="model" OnValidSubmit="Submit">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" />
+
+            <div class="mb-3">
+                <label class="form-label">First Name</label>
+                <InputText class="form-control" @bind-Value="model.FirstName" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Last Name</label>
+                <InputText class="form-control" @bind-Value="model.LastName" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <InputText class="form-control" @bind-Value="model.Email" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Password</label>
+                <InputText type="password" class="form-control" @bind-Value="model.Password" />
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100" disabled="@submitting">
+                @(submitting ? "Registering..." : "Register")
+            </button>
+        </EditForm>
+
+        <p class="mt-3 text-center">
+            Already have an account? <a href="/login">Login</a>
+        </p>
+    </div>
+</div>
+
+@code {
+    private RegisterRequest model = new();
+    private List<string> errors = [];
+    private bool submitting;
+
+    private async Task Submit()
+    {
+        submitting = true;
+        errors = [];
+        var (result, serverErrors) = await AuthSvc.RegisterAsync(model);
+        if (result != null)
+        {
+            await AuthProvider.MarkAsAuthenticatedAsync(result.Token);
+            Nav.NavigateTo("/");
+        }
+        else
+        {
+            errors = serverErrors?.ToList() ?? ["Registration failed."];
+        }
+        submitting = false;
+    }
+}

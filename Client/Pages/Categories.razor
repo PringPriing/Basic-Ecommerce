@@ -1,0 +1,96 @@
+@page "/categories"
+@inject CategoryApiService CategoryApi
+
+<PageTitle>Categories — E-Shop</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Categories</h2>
+    <AuthorizeView Roles="Admin">
+        <button class="btn btn-success btn-sm" @onclick="ShowCreate">+ Add Category</button>
+    </AuthorizeView>
+</div>
+
+@if (showForm)
+{
+    <div class="card mb-3 p-3">
+        <h5>@(editing == null ? "New Category" : "Edit Category")</h5>
+        <div class="mb-2">
+            <input class="form-control" placeholder="Name" @bind="formName" />
+        </div>
+        <div class="mb-2">
+            <input class="form-control" placeholder="Description" @bind="formDesc" />
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary btn-sm" @onclick="Save">Save</button>
+            <button class="btn btn-secondary btn-sm" @onclick="CancelForm">Cancel</button>
+        </div>
+    </div>
+}
+
+@if (categories == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-3 g-3">
+        @foreach (var cat in categories)
+        {
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">@cat.Name</h5>
+                        <p class="card-text text-muted">@cat.Description</p>
+                        <a href="/products?categoryId=@cat.Id" class="btn btn-sm btn-outline-primary">Browse</a>
+                        <AuthorizeView Roles="Admin">
+                            <button class="btn btn-sm btn-outline-secondary ms-1" @onclick="() => StartEdit(cat)">Edit</button>
+                            <button class="btn btn-sm btn-outline-danger ms-1" @onclick="() => Delete(cat.Id)">Delete</button>
+                        </AuthorizeView>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private IList<CategoryDto>? categories;
+    private bool showForm;
+    private CategoryDto? editing;
+    private string formName = string.Empty;
+    private string formDesc = string.Empty;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync() => categories = await CategoryApi.GetAllAsync();
+
+    private void ShowCreate() { editing = null; formName = ""; formDesc = ""; showForm = true; }
+
+    private void StartEdit(CategoryDto cat)
+    {
+        editing = cat;
+        formName = cat.Name;
+        formDesc = cat.Description;
+        showForm = true;
+    }
+
+    private void CancelForm() { showForm = false; editing = null; }
+
+    private async Task Save()
+    {
+        if (editing == null)
+            await CategoryApi.CreateAsync(new CreateCategoryRequest { Name = formName, Description = formDesc });
+        else
+            await CategoryApi.UpdateAsync(editing.Id, new UpdateCategoryRequest { Name = formName, Description = formDesc, IsActive = true });
+
+        showForm = false;
+        editing = null;
+        await LoadAsync();
+    }
+
+    private async Task Delete(int id)
+    {
+        await CategoryApi.DeleteAsync(id);
+        await LoadAsync();
+    }
+}

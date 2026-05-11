@@ -1,0 +1,68 @@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject CartApiService CartApi
+@inject AuthenticationStateProvider AuthProvider
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4 auth-links">
+            <AuthorizeView>
+                <Authorized>
+                    <span class="me-3">Hello, @context.User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value!</span>
+                    <a href="/cart" class="me-3 cart-link">
+                        🛒 Cart
+                        @if (cartCount > 0)
+                        {
+                            <span class="cart-badge">@cartCount</span>
+                        }
+                    </a>
+                    <a href="/logout">Logout</a>
+                </Authorized>
+                <NotAuthorized>
+                    <a href="/login" class="me-2">Login</a>
+                    <a href="/register">Register</a>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+<Toast />
+
+@code {
+    private int cartCount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CartApi.CartChanged += OnCartChanged;
+
+        var auth = await AuthProvider.GetAuthenticationStateAsync();
+        if (auth.User.Identity?.IsAuthenticated == true)
+            await RefreshCountAsync();
+    }
+
+    private async void OnCartChanged()
+    {
+        await RefreshCountAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task RefreshCountAsync()
+    {
+        var cart = await CartApi.GetCartAsync();
+        cartCount = cart?.ItemCount ?? 0;
+    }
+
+    public void Dispose()
+    {
+        CartApi.CartChanged -= OnCartChanged;
+    }
+}
