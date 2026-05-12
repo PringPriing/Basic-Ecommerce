@@ -1,0 +1,131 @@
+@page
+@model Ecommerce.Server.Pages.HealthDashboardModel
+@using Microsoft.Extensions.Diagnostics.HealthChecks
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="refresh" content="30" />
+    <title>Health Dashboard</title>
+    <link href="~/css/bootstrap/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        body { background-color: #f8f9fa; }
+        .status-banner { border-radius: 8px; padding: 1rem 1.5rem; }
+        .check-list-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.85rem 1.25rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .check-list-item:last-child { border-bottom: none; }
+        .check-name { font-weight: 600; font-size: 0.95rem; text-transform: capitalize; }
+        .check-description { font-size: 0.82rem; color: #6c757d; margin-top: 2px; }
+        .status-badge {
+            margin-left: auto;
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 0.3rem 0.75rem;
+            border-radius: 50px;
+        }
+        .refreshed-at { font-size: 0.78rem; color: #6c757d; }
+    </style>
+</head>
+<body>
+    <div class="container py-5" style="max-width: 680px;">
+
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+                <h4 class="mb-0 fw-bold">Health Dashboard</h4>
+                <span class="refreshed-at">Last checked: @Model.CheckedAt.ToString("yyyy-MM-dd HH:mm:ss") UTC &mdash; auto-refreshes every 30s</span>
+            </div>
+        </div>
+
+        @{
+            var overallHealthy = Model.Report?.Status == HealthStatus.Healthy;
+            var overallDegraded = Model.Report?.Status == HealthStatus.Degraded;
+            string bannerClass = overallHealthy ? "alert-success" : overallDegraded ? "alert-warning" : "alert-danger";
+            string overallLabel = Model.Report?.Status.ToString() ?? "Unknown";
+        }
+
+        <div class="alert @bannerClass status-banner d-flex align-items-center gap-2 mb-4" role="alert">
+            @if (overallHealthy)
+            {
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                </svg>
+            }
+            else if (overallDegraded)
+            {
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                </svg>
+            }
+            else
+            {
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/>
+                </svg>
+            }
+            <strong>Overall status: @overallLabel</strong>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                @if (Model.Report is null)
+                {
+                    <div class="check-list-item text-muted">No health data available.</div>
+                }
+                else
+                {
+                    @foreach (var entry in Model.Report.Entries)
+                    {
+                        var isHealthy = entry.Value.Status == HealthStatus.Healthy;
+                        var isDegraded = entry.Value.Status == HealthStatus.Degraded;
+
+                        <div class="check-list-item">
+                            @if (isHealthy)
+                            {
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#198754" viewBox="0 0 16 16" flex-shrink="0">
+                                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                                </svg>
+                            }
+                            else if (isDegraded)
+                            {
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#ffc107" viewBox="0 0 16 16">
+                                    <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                                </svg>
+                            }
+                            else
+                            {
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#dc3545" viewBox="0 0 16 16">
+                                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/>
+                                </svg>
+                            }
+
+                            <div>
+                                <div class="check-name">@entry.Key.Replace("-", " ")</div>
+                                @if (!string.IsNullOrWhiteSpace(entry.Value.Description))
+                                {
+                                    <div class="check-description">@entry.Value.Description</div>
+                                }
+                                @if (entry.Value.Exception is not null)
+                                {
+                                    <div class="check-description text-danger">@entry.Value.Exception.Message</div>
+                                }
+                            </div>
+
+                            <span class="status-badge @(isHealthy ? "bg-success text-white" : isDegraded ? "bg-warning text-dark" : "bg-danger text-white")">
+                                @entry.Value.Status
+                            </span>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>
