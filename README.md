@@ -2,6 +2,9 @@
 
 A full-stack e-commerce application built with Blazor WebAssembly and ASP.NET Core 8, featuring product management, user authentication, and a persistent shopping cart.
 
+# Demo Site
+https://app-ecommerce-prince-brc8eddrbse9e5hx.southeastasia-01.azurewebsites.net/
+
 ---
 
 ## Technologies
