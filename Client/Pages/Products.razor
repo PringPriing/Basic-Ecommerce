@@ -74,6 +74,10 @@ else
 }
 
 @code {
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "categoryId")]
+    public int? CategoryIdParam { get; set; }
+
     private PagedResult<ProductSummaryDto>? result;
     private IList<CategoryDto>? categories;
     private IList<ProductSummaryDto> suggestions = [];
@@ -85,6 +89,15 @@ else
     protected override async Task OnInitializedAsync()
     {
         categories = await CategoryApi.GetAllAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (selectedCategoryId != CategoryIdParam)
+        {
+            selectedCategoryId = CategoryIdParam;
+            currentPage = 1;
+        }
         await LoadProducts();
     }
 
