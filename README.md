@@ -129,3 +129,56 @@ Ecommerce.sln
     ├── Ecommerce.Server.Tests/   # xUnit unit + integration tests (32 tests)
     └── Ecommerce.Client.Tests/   # bUnit component tests (5 tests)
 ```
+
+---
+
+## Entity Relationship Diagram
+
+```mermaid
+erDiagram
+    AspNetUsers {
+        string Id PK
+        string FirstName
+        string LastName
+        datetime CreatedAt
+        string Email
+        string PasswordHash
+    }
+
+    Products {
+        int Id PK
+        string Name
+        string Description
+        decimal Price
+        int StockQuantity
+        string ImageUrl
+        string ImageBlobName
+        bool IsActive
+        datetime CreatedAt
+    }
+
+    Categories {
+        int Id PK
+        string Name
+        string Description
+        bool IsActive
+    }
+
+    ProductCategories {
+        int ProductId PK, FK
+        int CategoryId PK, FK
+    }
+
+    CartItems {
+        int Id PK
+        string UserId FK
+        int ProductId FK
+        int Quantity
+        datetime AddedAt
+    }
+
+    AspNetUsers ||--o{ CartItems : "has"
+    Products ||--o{ CartItems : "referenced in"
+    Products ||--o{ ProductCategories : "belongs to"
+    Categories ||--o{ ProductCategories : "groups"
+```
