@@ -1,0 +1,17 @@
+@page "/checkout/cancel"
+@attribute [Authorize]
+
+<PageTitle>Payment Cancelled — E-Shop</PageTitle>
+
+<div class="container py-5 text-center">
+    <div class="mb-3" style="font-size:4rem; color:var(--bs-secondary);">&#10005;</div>
+    <h2>Payment Cancelled</h2>
+    <p class="text-muted">
+        Your payment was not processed. Your cart has been preserved — you can return and try again whenever you're ready.
+    </p>
+
+    <div class="mt-4 d-flex justify-content-center gap-3">
+        <a href="/cart" class="btn btn-primary">Return to Cart</a>
+        <a href="/products" class="btn btn-outline-secondary">Continue Shopping</a>
+    </div>
+</div>

@@ -52,6 +52,7 @@ builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
+builder.Services.AddScoped<ICheckoutService, CheckoutService>();
 
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<ApplicationDbContext>("database")
@@ -98,6 +99,13 @@ else
     app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
+
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/api/checkout/webhook"))
+        context.Request.EnableBuffering();
+    await next();
+});
 
 app.UseHttpsRedirection();
 app.UseBlazorFrameworkFiles();

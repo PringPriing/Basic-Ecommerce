@@ -12,6 +12,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Product> Products => Set<Product>();
     public DbSet<ProductCategory> ProductCategories => Set<ProductCategory>();
     public DbSet<CartItem> CartItems => Set<CartItem>();
+    public DbSet<Order> Orders => Set<Order>();
+    public DbSet<OrderItem> OrderItems => Set<OrderItem>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -45,6 +47,25 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .WithMany(p => p.CartItems)
             .HasForeignKey(ci => ci.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<Order>()
+            .HasOne(o => o.User).WithMany(u => u.Orders)
+            .HasForeignKey(o => o.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<Order>()
+            .Property(o => o.TotalAmount).HasPrecision(18, 2);
+        builder.Entity<Order>()
+            .HasIndex(o => o.StripeSessionId).IsUnique();
+
+        builder.Entity<OrderItem>()
+            .HasOne(oi => oi.Order).WithMany(o => o.Items)
+            .HasForeignKey(oi => oi.OrderId).OnDelete(DeleteBehavior.Cascade);
+        builder.Entity<OrderItem>()
+            .HasOne(oi => oi.Product).WithMany(p => p.OrderItems)
+            .HasForeignKey(oi => oi.ProductId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<OrderItem>()
+            .Property(oi => oi.UnitPrice).HasPrecision(18, 2);
 
         SeedData(builder);
     }

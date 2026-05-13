@@ -1,6 +1,8 @@
 @page "/cart"
 @attribute [Authorize]
 @inject CartApiService CartApi
+@inject CheckoutApiService CheckoutApi
+@inject NavigationManager Nav
 
 <PageTitle>Shopping Cart — E-Shop</PageTitle>
 
@@ -66,9 +68,16 @@ else
         </table>
     </div>
 
+    @if (checkoutError is not null)
+    {
+        <div class="alert alert-danger">@checkoutError</div>
+    }
+
     <div class="d-flex justify-content-between">
         <button class="btn btn-outline-danger" @onclick="ClearCart">Clear Cart</button>
-        <button class="btn btn-success">Checkout (coming soon)</button>
+        <button class="btn btn-success" @onclick="StartCheckout" disabled="@checkingOut">
+            @(checkingOut ? "Redirecting..." : "Checkout")
+        </button>
     </div>
 }
 
@@ -101,5 +110,30 @@ else
     {
         await CartApi.ClearCartAsync();
         await LoadAsync();
+    }
+
+    private bool checkingOut;
+    private string? checkoutError;
+
+    private async Task StartCheckout()
+    {
+        checkingOut = true;
+        checkoutError = null;
+        try
+        {
+            var result = await CheckoutApi.CreateSessionAsync();
+            if (result?.SessionUrl is not null)
+                Nav.NavigateTo(result.SessionUrl, forceLoad: true);
+            else
+                checkoutError = "Could not start checkout. Please try again.";
+        }
+        catch (Exception ex)
+        {
+            checkoutError = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            checkingOut = false;
+        }
     }
 }
