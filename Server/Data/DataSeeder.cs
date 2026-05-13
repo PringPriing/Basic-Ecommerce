@@ -12,7 +12,10 @@ public static class DataSeeder
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
         var db = services.GetRequiredService<ApplicationDbContext>();
 
-        await db.Database.MigrateAsync();
+        if (db.Database.IsRelational())
+            await db.Database.MigrateAsync();
+        else
+            await db.Database.EnsureCreatedAsync();
 
         foreach (var role in new[] { "Admin", "Customer" })
         {
