@@ -3,19 +3,22 @@
 @inject CustomAuthStateProvider AuthProvider
 @inject NavigationManager Nav
 
-<PageTitle>Register — E-Shop</PageTitle>
+<PageTitle>Register — E-Shop.</PageTitle>
 
-<div class="row justify-content-center">
-    <div class="col-md-5">
-        <h2 class="mb-4">Create Account</h2>
+<div style="min-height:60vh;display:flex;align-items:center;justify-content:center;padding:64px 32px">
+    <div style="width:100%;max-width:480px">
+        <div style="text-align:center;margin-bottom:40px">
+            <div class="eyebrow" style="margin-bottom:12px">Join us</div>
+            <h1 style="font-size:40px">Create account</h1>
+        </div>
 
         @if (errors.Any())
         {
-            <div class="alert alert-danger">
-                <ul class="mb-0">
+            <div class="alert alert-danger" style="margin-bottom:20px">
+                <ul style="margin:0;padding-left:20px">
                     @foreach (var e in errors)
                     {
-                        <li>@e</li>
+                        <li style="font-size:13px">@e</li>
                     }
                 </ul>
             </div>
@@ -23,32 +26,35 @@
 
         <EditForm Model="model" OnValidSubmit="Submit">
             <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" />
+            <ValidationSummary class="text-danger" style="margin-bottom:16px;font-size:13px" />
 
-            <div class="mb-3">
-                <label class="form-label">First Name</label>
-                <InputText class="form-control" @bind-Value="model.FirstName" />
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+                <div>
+                    <label class="label">First name</label>
+                    <InputText class="field" @bind-Value="model.FirstName" placeholder="Jane" />
+                </div>
+                <div>
+                    <label class="label">Last name</label>
+                    <InputText class="field" @bind-Value="model.LastName" placeholder="Smith" />
+                </div>
             </div>
-            <div class="mb-3">
-                <label class="form-label">Last Name</label>
-                <InputText class="form-control" @bind-Value="model.LastName" />
+            <div style="margin-bottom:16px">
+                <label class="label">Email</label>
+                <InputText class="field" @bind-Value="model.Email" placeholder="you@example.com" />
             </div>
-            <div class="mb-3">
-                <label class="form-label">Email</label>
-                <InputText class="form-control" @bind-Value="model.Email" />
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Password</label>
-                <InputText type="password" class="form-control" @bind-Value="model.Password" />
+            <div style="margin-bottom:24px">
+                <label class="label">Password</label>
+                <InputText type="password" class="field" @bind-Value="model.Password" placeholder="••••••••" />
             </div>
 
-            <button type="submit" class="btn btn-primary w-100" disabled="@submitting">
-                @(submitting ? "Registering..." : "Register")
+            <button type="submit" class="btn btn--primary btn--lg btn--block" disabled="@submitting">
+                @(submitting ? "Creating account…" : "Create account")
             </button>
         </EditForm>
 
-        <p class="mt-3 text-center">
-            Already have an account? <a href="/login">Login</a>
+        <p style="margin-top:24px;text-align:center;font-size:14px;color:var(--muted)">
+            Already have an account?
+            <a href="/login" style="color:var(--ink);font-weight:500;text-decoration:underline">Sign in</a>
         </p>
     </div>
 </div>

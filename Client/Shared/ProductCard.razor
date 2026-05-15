@@ -1,30 +1,42 @@
 @inject CartApiService CartApi
 @inject NavigationManager Nav
 
-<div class="card h-100 shadow-sm">
-    <img src="@(Product.ImageUrl ?? "https://placehold.co/300x200?text=No+Image")"
-         class="card-img-top" alt="@Product.Name" style="height:200px;object-fit:cover;" />
-    <div class="card-body d-flex flex-column">
-        <h6 class="card-title">@Product.Name</h6>
-        <p class="card-text text-muted small flex-grow-1">@Product.ShortDescription</p>
-        <div class="d-flex flex-wrap gap-1 mb-2">
-            @foreach (var cat in Product.CategoryNames)
-            {
-                <span class="badge bg-secondary">@cat</span>
-            }
-        </div>
-        <div class="d-flex justify-content-between align-items-center mt-auto">
-            <strong class="text-success">$@Product.Price.ToString("F2")</strong>
-            <div class="btn-group btn-group-sm">
-                <button class="btn btn-outline-primary" @onclick="ViewDetail">Details</button>
-                <AuthorizeView>
-                    <Authorized>
-                        <button class="btn btn-primary" @onclick="AddToCart" disabled="@adding">
-                            @(adding ? "Adding..." : "Add to Cart")
-                        </button>
-                    </Authorized>
-                </AuthorizeView>
+<div class="product-card" @onclick="ViewDetail">
+    <div class="product-card__media">
+        @if (!string.IsNullOrEmpty(Product.ImageUrl))
+        {
+            <img src="@Product.ImageUrl" alt="@Product.Name" />
+        }
+        else
+        {
+            <div class="product-card__no-img">No image</div>
+        }
+        <AuthorizeView>
+            <Authorized>
+                <button class="product-card__quick"
+                        @onclick:stopPropagation="true"
+                        @onclick="AddToCart"
+                        disabled="@adding">
+                    @(adding ? "Adding…" : "Add to cart")
+                </button>
+            </Authorized>
+            <NotAuthorized>
+                <button class="product-card__quick" @onclick:stopPropagation="true" @onclick="ViewDetail">
+                    View details
+                </button>
+            </NotAuthorized>
+        </AuthorizeView>
+    </div>
+    <div>
+        <div class="product-card__info">
+            <div>
+                <div class="product-card__name">@Product.Name</div>
+                @if (Product.CategoryNames.Any())
+                {
+                    <div class="product-card__cat">@string.Join(", ", Product.CategoryNames)</div>
+                }
             </div>
+            <div class="product-card__price">$@Product.Price.ToString("F0")</div>
         </div>
     </div>
 </div>

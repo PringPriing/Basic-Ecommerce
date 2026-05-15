@@ -2,76 +2,133 @@
 @inject ProductApiService ProductApi
 @inject CategoryApiService CategoryApi
 
-<PageTitle>Products — E-Shop</PageTitle>
+<PageTitle>Shop — E-Shop.</PageTitle>
 
-<h2>Products</h2>
-
-<div class="row mb-3 g-2">
-    <div class="col-md-5 position-relative">
-        <input class="form-control" placeholder="Search by name..."
-               @bind="searchName" @bind:event="oninput"
-               @onkeyup="OnSearchKey" @onfocusout="OnInputBlur" />
-        @if (suggestions.Any())
-        {
-            <div class="dropdown-menu show w-100 shadow-sm"
-                 style="max-height: 280px; overflow-y: auto; z-index: 1050;">
-                @foreach (var s in suggestions)
-                {
-                    <button type="button" class="dropdown-item d-flex align-items-center gap-2 py-2"
-                            @onclick="() => SelectSuggestion(s)">
-                        @if (!string.IsNullOrEmpty(s.ImageUrl))
-                        {
-                            <img src="@s.ImageUrl" width="36" height="36"
-                                 style="object-fit: cover; border-radius: 4px; flex-shrink: 0;" alt="" />
-                        }
-                        <span class="flex-grow-1">@s.Name</span>
-                        <small class="text-muted">$@s.Price.ToString("F2")</small>
-                    </button>
-                }
-            </div>
-        }
+<div class="container" style="padding-top:32px;padding-bottom:0">
+    <!-- Breadcrumb -->
+    <div style="font-size:12px;color:var(--muted);display:flex;gap:8px;margin-bottom:24px">
+        <a href="/" style="color:var(--muted);text-decoration:none">Home</a>
+        <span>/</span>
+        <span style="color:var(--ink)">All products</span>
     </div>
-    <div class="col-md-4">
-        <select class="form-select" @bind="selectedCategoryId" @bind:after="OnCategoryChanged">
-            <option value="">All Categories</option>
-            @if (categories != null)
+
+    <div style="display:flex;justify-content:space-between;align-items:end;margin-bottom:28px">
+        <div>
+            <h1 style="font-size:clamp(36px,4vw,56px)">All products</h1>
+            @if (result != null)
             {
-                @foreach (var cat in categories)
-                {
-                    <option value="@cat.Id">@cat.Name</option>
-                }
+                <p style="color:var(--muted);margin-top:8px">@result.TotalCount pieces in our collection.</p>
             }
-        </select>
+        </div>
     </div>
-    <div class="col-md-3">
-        <button class="btn btn-primary w-100" @onclick="OnSearchClick">Search</button>
+
+    <!-- Search + sort row -->
+    <div style="display:flex;gap:12px;align-items:center;padding-bottom:24px;border-bottom:1px solid var(--line)">
+        <div style="position:relative;flex:1;max-width:420px">
+            <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18">
+                    <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+                </svg>
+            </span>
+            <input class="field" placeholder="Search by name…"
+                   style="padding-left:42px"
+                   @bind="searchName" @bind:event="oninput"
+                   @onkeyup="OnSearchKey" @onfocusout="OnInputBlur" />
+            @if (suggestions.Any())
+            {
+                <div style="position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-lift);z-index:100;max-height:280px;overflow-y:auto">
+                    @foreach (var s in suggestions)
+                    {
+                        <button type="button"
+                                style="display:flex;align-items:center;gap:12px;padding:10px 14px;width:100%;background:none;border:none;cursor:pointer;text-align:left;border-bottom:1px solid var(--line)"
+                                @onclick="() => SelectSuggestion(s)">
+                            @if (!string.IsNullOrEmpty(s.ImageUrl))
+                            {
+                                <img src="@s.ImageUrl" width="36" height="36"
+                                     style="object-fit:cover;border-radius:var(--radius-sm);flex-shrink:0" alt="" />
+                            }
+                            <span style="flex:1;font-size:14px;color:var(--ink)">@s.Name</span>
+                            <span style="font-family:var(--font-display);font-size:16px;color:var(--muted)">$@s.Price.ToString("F0")</span>
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+        <button class="btn btn--primary" @onclick="OnSearchClick">Search</button>
     </div>
 </div>
 
-@if (result == null)
-{
-    <p><em>Loading...</em></p>
-}
-else if (!result.Items.Any())
-{
-    <p class="text-muted">No products found.</p>
-}
-else
-{
-    <p class="text-muted">Showing @result.Items.Count of @result.TotalCount products</p>
-    <div class="row row-cols-1 row-cols-md-3 g-4">
-        @foreach (var product in result.Items)
+<div class="container" style="padding-top:32px;padding-bottom:80px;display:grid;grid-template-columns:240px 1fr;gap:48px">
+    <!-- Sidebar filters -->
+    <aside>
+        <div class="filter-group">
+            <div class="filter-group__title">Category</div>
+            <div style="display:flex;flex-direction:column">
+                <button class="filter-row @(selectedCategoryId == null ? "is-active" : "")"
+                        @onclick="async () => { selectedCategoryId = null; await OnCategoryChanged(); }">
+                    <span>All</span>
+                    @if (result != null)
+                    {
+                        <span class="filter-row__count">@result.TotalCount</span>
+                    }
+                </button>
+                @if (categories != null)
+                {
+                    @foreach (var cat in categories)
+                    {
+                        var catId = (int?)cat.Id;
+                        <button class="filter-row @(selectedCategoryId == cat.Id ? "is-active" : "")"
+                                @onclick="async () => { selectedCategoryId = catId; await OnCategoryChanged(); }">
+                            <span>@cat.Name</span>
+                        </button>
+                    }
+                }
+            </div>
+        </div>
+    </aside>
+
+    <!-- Product grid -->
+    <div>
+        @if (result == null)
         {
-            <div class="col">
-                <ProductCard Product="product" />
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:28px">
+                @for (int i = 0; i < 9; i++)
+                {
+                    <div>
+                        <div class="skeleton" style="aspect-ratio:4/5;border-radius:var(--radius)"></div>
+                        <div class="skeleton" style="height:16px;margin-top:14px;border-radius:4px;width:80%"></div>
+                        <div class="skeleton" style="height:12px;margin-top:8px;border-radius:4px;width:50%"></div>
+                    </div>
+                }
+            </div>
+        }
+        else if (!result.Items.Any())
+        {
+            <div style="padding:80px 0;text-align:center">
+                <p style="color:var(--muted);font-size:16px">No products found.</p>
+                <button class="btn btn--ghost" style="margin-top:16px"
+                        @onclick="async () => { searchName = string.Empty; selectedCategoryId = null; await LoadProducts(); }">
+                    Clear filters
+                </button>
+            </div>
+        }
+        else
+        {
+            <p style="font-size:13px;color:var(--muted);margin-bottom:24px">
+                Showing @result.Items.Count of @result.TotalCount results
+            </p>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:28px">
+                @foreach (var product in result.Items)
+                {
+                    <ProductCard Product="product" />
+                }
+            </div>
+            <div style="margin-top:56px">
+                <Pagination CurrentPage="result.Page" TotalPages="result.TotalPages" OnPageChanged="OnPageChanged" />
             </div>
         }
     </div>
-
-    <div class="mt-4">
-        <Pagination CurrentPage="result.Page" TotalPages="result.TotalPages" OnPageChanged="OnPageChanged" />
-    </div>
-}
+</div>
 
 @code {
     [Parameter]

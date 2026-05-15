@@ -4,80 +4,147 @@
 @inject CheckoutApiService CheckoutApi
 @inject NavigationManager Nav
 
-<PageTitle>Shopping Cart — E-Shop</PageTitle>
-
-<h2>Shopping Cart</h2>
+<PageTitle>Cart — E-Shop.</PageTitle>
 
 @if (cart == null)
 {
-    <p><em>Loading...</em></p>
+    <div class="container" style="padding:80px 32px;text-align:center">
+        <div class="skeleton" style="height:56px;width:200px;margin:0 auto;border-radius:4px"></div>
+    </div>
 }
 else if (!cart.Items.Any())
 {
-    <div class="text-center py-5">
-        <p class="text-muted">Your cart is empty.</p>
-        <a href="/products" class="btn btn-primary">Continue Shopping</a>
+    <div class="container" style="padding:120px 32px;text-align:center">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1" width="64" height="64">
+            <path d="M4 5h2.5l2 12h10l2-8H7"/><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/>
+        </svg>
+        <h2 style="font-size:36px;margin-top:24px">Your cart is empty</h2>
+        <p style="color:var(--muted);margin-top:12px">Add something beautiful to get started.</p>
+        <a href="/products" class="btn btn--primary btn--lg" style="margin-top:28px">Continue shopping</a>
     </div>
 }
 else
 {
-    <div class="table-responsive">
-        <table class="table align-middle">
-            <thead>
-                <tr>
-                    <th>Product</th>
-                    <th>Unit Price</th>
-                    <th>Quantity</th>
-                    <th>Subtotal</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in cart.Items)
-                {
-                    <tr>
-                        <td>
-                            <div class="d-flex align-items-center gap-2">
-                                <img src="@(item.ProductImageUrl ?? "https://placehold.co/60x60?text=?")"
-                                     width="60" height="60" class="rounded" style="object-fit:cover;" />
-                                @item.ProductName
-                            </div>
-                        </td>
-                        <td>$@item.UnitPrice.ToString("F2")</td>
-                        <td>
-                            <div class="input-group input-group-sm" style="width:110px;">
-                                <button class="btn btn-outline-secondary" @onclick="() => Decrement(item)">-</button>
-                                <input type="number" class="form-control text-center" value="@item.Quantity"
-                                       @onchange="e => UpdateQty(item, int.Parse(e.Value!.ToString()!))" min="1" max="100" />
-                                <button class="btn btn-outline-secondary" @onclick="() => Increment(item)">+</button>
-                            </div>
-                        </td>
-                        <td>$@item.Subtotal.ToString("F2")</td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-danger" @onclick="() => Remove(item.Id)">Remove</button>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="3" class="text-end fw-bold">Total</td>
-                    <td colspan="2" class="fw-bold text-success">$@cart.Total.ToString("F2")</td>
-                </tr>
-            </tfoot>
-        </table>
+    <div class="container" style="padding:40px 32px 0">
+        <h1 style="font-size:clamp(36px,4vw,56px)">Your cart</h1>
+        <p style="color:var(--muted);margin-top:8px">@cart.Items.Count @(cart.Items.Count == 1 ? "item" : "items") · review and check out</p>
     </div>
 
-    @if (checkoutError is not null)
-    {
-        <div class="alert alert-danger">@checkoutError</div>
-    }
+    <div class="container" style="padding:32px;display:grid;grid-template-columns:1.6fr 1fr;gap:56px;padding-bottom:80px">
+        <!-- Items list -->
+        <div>
+            <div style="display:flex;flex-direction:column;gap:16px">
+                @foreach (var item in cart.Items)
+                {
+                    <div class="surface" style="padding:20px;display:grid;grid-template-columns:100px 1fr;gap:20px;align-items:start">
+                        <div style="aspect-ratio:1;border-radius:var(--radius);overflow:hidden;background:var(--surface-2)">
+                            @if (!string.IsNullOrEmpty(item.ProductImageUrl))
+                            {
+                                <img src="@item.ProductImageUrl" style="width:100%;height:100%;object-fit:cover" alt="@item.ProductName" />
+                            }
+                        </div>
+                        <div>
+                            <div style="display:flex;justify-content:space-between;gap:12px">
+                                <div>
+                                    <div style="font-family:var(--font-display);font-size:20px">@item.ProductName</div>
+                                </div>
+                                <div class="price" style="font-size:18px;white-space:nowrap">$@item.Subtotal.ToString("F2")</div>
+                            </div>
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px">
+                                <div class="qty-stepper">
+                                    <button class="qty-stepper__btn" @onclick="() => Decrement(item)">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><path d="M5 12h14"/></svg>
+                                    </button>
+                                    <span class="qty-stepper__val">@item.Quantity</span>
+                                    <button class="qty-stepper__btn" @onclick="() => Increment(item)">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><path d="M12 5v14M5 12h14"/></svg>
+                                    </button>
+                                </div>
+                                <button class="btn btn--link" style="font-size:13px;color:var(--muted);border-bottom-color:var(--muted)"
+                                        @onclick="() => Remove(item.Id)">
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
 
-    <div class="d-flex justify-content-between">
-        <button class="btn btn-outline-danger" @onclick="ClearCart">Clear Cart</button>
-        <button class="btn btn-success" @onclick="StartCheckout" disabled="@checkingOut">
-            @(checkingOut ? "Redirecting..." : "Checkout")
-        </button>
+            <!-- Trust strip -->
+            <div class="surface--flat" style="margin-top:32px;padding:20px 24px;display:flex;gap:32px;border-radius:var(--radius-lg)">
+                <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink-2)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" width="20" height="20">
+                        <path d="M3 7h11v10H3zM14 10h4l3 3v4h-7"/><circle cx="7" cy="18" r="1.7"/><circle cx="17" cy="18" r="1.7"/>
+                    </svg>
+                    Free shipping above $80
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink-2)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" width="20" height="20">
+                        <path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>
+                    </svg>
+                    30-day returns
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink-2)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" width="20" height="20">
+                        <path d="M12 3 4 6v6c0 5 3.5 8.5 8 9 4.5-.5 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>
+                    </svg>
+                    Encrypted checkout
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary panel -->
+        <aside>
+            <div style="position:sticky;top:96px">
+                <div class="surface" style="padding:28px">
+                    <h3 style="font-size:24px;margin-bottom:20px">Summary</h3>
+
+                    <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:14px">
+                        <span>Subtotal</span>
+                        <span>$@cart.Total.ToString("F2")</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:14px">
+                        <span>Shipping</span>
+                        <span style="color:@(cart.Total > 80 ? "var(--success)" : "var(--ink)")">
+                            @(cart.Total > 80 ? "Free" : "$8.00")
+                        </span>
+                    </div>
+                    <div style="height:1px;background:var(--line);margin:16px 0"></div>
+                    <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:17px;font-weight:500">
+                        <span>Total</span>
+                        <span style="font-family:var(--font-display);font-size:24px">
+                            $@((cart.Total + (cart.Total > 80 ? 0 : 8)).ToString("F2"))
+                        </span>
+                    </div>
+
+                    @if (checkoutError is not null)
+                    {
+                        <div class="alert alert-danger" style="margin-top:16px">@checkoutError</div>
+                    }
+
+                    <button class="btn btn--primary btn--lg btn--block" style="margin-top:20px"
+                            @onclick="StartCheckout" disabled="@checkingOut">
+                        @(checkingOut ? "Redirecting…" : "Checkout securely")
+                        @if (!checkingOut)
+                        {
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18">
+                                <path d="M5 12h14m-5-6 6 6-6 6"/>
+                            </svg>
+                        }
+                    </button>
+                    <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--muted)">
+                        Visa · Mastercard · Apple Pay · Google Pay
+                    </div>
+                </div>
+
+                <div style="margin-top:16px">
+                    <button class="btn btn--ghost btn--sm" @onclick="ClearCart"
+                            style="width:100%;color:var(--muted);border-color:var(--line)">
+                        Clear cart
+                    </button>
+                </div>
+            </div>
+        </aside>
     </div>
 }
 

@@ -1,17 +1,25 @@
 @page "/checkout/cancel"
 @attribute [Authorize]
 
-<PageTitle>Payment Cancelled — E-Shop</PageTitle>
+<PageTitle>Payment Cancelled — E-Shop.</PageTitle>
 
-<div class="container py-5 text-center">
-    <div class="mb-3" style="font-size:4rem; color:var(--bs-secondary);">&#10005;</div>
-    <h2>Payment Cancelled</h2>
-    <p class="text-muted">
-        Your payment was not processed. Your cart has been preserved — you can return and try again whenever you're ready.
-    </p>
+<div style="min-height:60vh;display:flex;align-items:center;justify-content:center;padding:80px 32px;text-align:center">
+    <div style="max-width:480px">
+        <div style="width:72px;height:72px;border-radius:99px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;margin:0 auto 32px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5" width="32" height="32">
+                <path d="m6 6 12 12M18 6 6 18"/>
+            </svg>
+        </div>
 
-    <div class="mt-4 d-flex justify-content-center gap-3">
-        <a href="/cart" class="btn btn-primary">Return to Cart</a>
-        <a href="/products" class="btn btn-outline-secondary">Continue Shopping</a>
+        <div class="eyebrow" style="margin-bottom:12px">Payment not completed</div>
+        <h1 style="font-size:48px;margin-bottom:16px">Cancelled</h1>
+        <p style="color:var(--ink-2);font-size:16px;line-height:1.7;margin-bottom:32px">
+            Your payment was not processed. Your cart is still saved — return whenever you're ready.
+        </p>
+
+        <div style="display:flex;gap:12px;justify-content:center">
+            <a href="/cart" class="btn btn--primary btn--lg">Return to cart</a>
+            <a href="/products" class="btn btn--ghost btn--lg">Continue shopping</a>
+        </div>
     </div>
 </div>

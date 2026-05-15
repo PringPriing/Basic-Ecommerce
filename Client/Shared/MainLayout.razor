@@ -3,36 +3,90 @@
 @inject CartApiService CartApi
 @inject AuthenticationStateProvider AuthProvider
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+<div class="page-wrap">
+    <header class="eshop-header">
+        <div class="eshop-header__announce">FREE SHIPPING ON ORDERS OVER $80</div>
+        <div class="container">
+            <div class="eshop-header__bar">
+                <a href="/" class="eshop-header__logo">Maison.</a>
+                <nav class="eshop-header__nav">
+                    <NavLink href="" Match="NavLinkMatch.All" ActiveClass="is-active">Home</NavLink>
+                    <NavLink href="products" ActiveClass="is-active">Shop</NavLink>
+                    <NavLink href="categories" ActiveClass="is-active">Categories</NavLink>
+                    <AuthorizeView Roles="Admin">
+                        <NavLink href="admin/products" ActiveClass="is-active">Manage</NavLink>
+                    </AuthorizeView>
+                </nav>
+                <div class="eshop-header__actions">
+                    <AuthorizeView>
+                        <Authorized>
+                            <span class="auth-user-name">@context.User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value</span>
+                            <a href="/cart" class="eshop-header__icon-btn" title="Cart">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20">
+                                    <path d="M4 5h2.5l2 12h10l2-8H7"/>
+                                    <circle cx="9" cy="20" r="1.5"/>
+                                    <circle cx="18" cy="20" r="1.5"/>
+                                </svg>
+                                @if (cartCount > 0)
+                                {
+                                    <span class="eshop-header__badge">@cartCount</span>
+                                }
+                            </a>
+                            <a href="/logout" class="btn btn--ghost btn--sm">Logout</a>
+                        </Authorized>
+                        <NotAuthorized>
+                            <a href="/login" class="btn btn--ghost btn--sm">Login</a>
+                            <a href="/register" class="btn btn--primary btn--sm">Register</a>
+                        </NotAuthorized>
+                    </AuthorizeView>
+                </div>
+            </div>
+        </div>
+    </header>
 
     <main>
-        <div class="top-row px-4 auth-links">
-            <AuthorizeView>
-                <Authorized>
-                    <span class="me-3">Hello, @context.User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value!</span>
-                    <a href="/cart" class="me-3 cart-link">
-                        🛒 Cart
-                        @if (cartCount > 0)
-                        {
-                            <span class="cart-badge">@cartCount</span>
-                        }
-                    </a>
-                    <a href="/logout">Logout</a>
-                </Authorized>
-                <NotAuthorized>
-                    <a href="/login" class="me-2">Login</a>
-                    <a href="/register">Register</a>
-                </NotAuthorized>
-            </AuthorizeView>
-        </div>
-
-        <article class="content px-4">
-            @Body
-        </article>
+        @Body
     </main>
+
+    <footer class="eshop-footer">
+        <div class="container">
+            <div class="eshop-footer__grid">
+                <div>
+                    <div class="eshop-footer__title">Maison.</div>
+                    <p style="max-width:320px;color:var(--ink-2);margin-top:12px;line-height:1.7">
+                        A curated shop for considered objects. Independent makers, careful materials, slow design.
+                    </p>
+                </div>
+                <div class="eshop-footer__col">
+                    <h4>Shop</h4>
+                    <ul>
+                        <li><a href="/products">All products</a></li>
+                        <li><a href="/categories">Categories</a></li>
+                    </ul>
+                </div>
+                <div class="eshop-footer__col">
+                    <h4>Account</h4>
+                    <ul>
+                        <li><a href="/login">Login</a></li>
+                        <li><a href="/register">Register</a></li>
+                        <li><a href="/cart">Cart</a></li>
+                    </ul>
+                </div>
+                <div class="eshop-footer__col">
+                    <h4>Info</h4>
+                    <ul>
+                        <li><a href="#">Shipping</a></li>
+                        <li><a href="#">Returns</a></li>
+                        <li><a href="#">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="eshop-footer__base">
+                <span>© 2026 Maison Goods Co.</span>
+                <span>Crafted with care</span>
+            </div>
+        </div>
+    </footer>
 </div>
 
 <Toast />

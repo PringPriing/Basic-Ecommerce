@@ -3,52 +3,120 @@
 @inject CartApiService CartApi
 @inject NavigationManager Nav
 
-<PageTitle>@(product?.Name ?? "Product") — E-Shop</PageTitle>
+<PageTitle>@(product?.Name ?? "Product") — E-Shop.</PageTitle>
 
 @if (product == null)
 {
-    <p><em>Loading...</em></p>
+    <div class="container" style="padding:80px 32px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px">
+            <div class="skeleton" style="aspect-ratio:4/5;border-radius:var(--radius-lg)"></div>
+            <div style="display:flex;flex-direction:column;gap:16px;padding-top:8px">
+                <div class="skeleton" style="height:14px;width:40%;border-radius:4px"></div>
+                <div class="skeleton" style="height:52px;border-radius:4px"></div>
+                <div class="skeleton" style="height:14px;width:60%;border-radius:4px"></div>
+                <div class="skeleton" style="height:80px;border-radius:4px;margin-top:8px"></div>
+            </div>
+        </div>
+    </div>
 }
 else
 {
-    <div class="row">
-        <div class="col-md-5">
-            <img src="@(product.ImageUrl ?? "https://placehold.co/500x400?text=No+Image")"
-                 class="img-fluid rounded shadow" alt="@product.Name" />
+    <div class="container" style="padding:24px 32px 0">
+        <div style="font-size:12px;color:var(--muted);display:flex;gap:8px">
+            <a href="/" style="color:var(--muted);text-decoration:none">Home</a>
+            <span>/</span>
+            <a href="/products" style="color:var(--muted);text-decoration:none">Shop</a>
+            <span>/</span>
+            <span style="color:var(--ink)">@product.Name</span>
         </div>
-        <div class="col-md-7">
-            <h2>@product.Name</h2>
-            <h4 class="text-success">$@product.Price.ToString("F2")</h4>
-            <p>@product.Description</p>
+    </div>
 
-            <div class="mb-3">
-                @foreach (var cat in product.Categories)
+    <section class="container" style="padding:32px;display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start">
+        <!-- Product image -->
+        <div style="aspect-ratio:4/5;border-radius:var(--radius-lg);overflow:hidden;background:var(--surface-2)">
+            @if (!string.IsNullOrEmpty(product.ImageUrl))
+            {
+                <img src="@product.ImageUrl" style="width:100%;height:100%;object-fit:cover" alt="@product.Name" />
+            }
+            else
+            {
+                <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1" width="64" height="64">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <path d="m21 15-5-5L5 21"/>
+                    </svg>
+                </div>
+            }
+        </div>
+
+        <!-- Buy box -->
+        <div style="padding:8px 0 0">
+            @if (product.Categories.Any())
+            {
+                <div class="eyebrow" style="margin-bottom:12px">@string.Join(" · ", product.Categories.Select(c => c.Name))</div>
+            }
+            <h1 style="font-size:44px;margin-bottom:20px">@product.Name</h1>
+
+            <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:24px">
+                <span class="price" style="font-size:36px">$@product.Price.ToString("F2")</span>
+            </div>
+
+            <p style="color:var(--ink-2);line-height:1.7;margin-bottom:28px;font-size:16px">@product.Description</p>
+
+            <!-- Stock info -->
+            <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:@(product.StockQuantity > 5 ? "var(--success-bg)" : product.StockQuantity > 0 ? "#faecd3" : "#fbe3df");border-radius:var(--radius);margin-bottom:24px">
+                @if (product.StockQuantity > 5)
                 {
-                    <span class="badge bg-secondary me-1">@cat.Name</span>
+                    <span class="badge badge--success" style="border-radius:999px">
+                        <span style="width:5px;height:5px;border-radius:99px;background:currentColor;display:inline-block"></span>
+                        In stock
+                    </span>
+                    <span style="font-size:13px;color:var(--ink-2)">@product.StockQuantity units available</span>
+                }
+                else if (product.StockQuantity > 0)
+                {
+                    <span class="badge badge--warning">
+                        <span style="width:5px;height:5px;border-radius:99px;background:currentColor;display:inline-block"></span>
+                        Low stock
+                    </span>
+                    <span style="font-size:13px;color:var(--ink-2)">Only @product.StockQuantity left</span>
+                }
+                else
+                {
+                    <span class="badge badge--danger">Out of stock</span>
                 }
             </div>
 
-            <p class="text-muted">In stock: @product.StockQuantity</p>
-
-            <div class="d-flex align-items-center gap-2 mb-3">
-                <label class="form-label mb-0">Qty:</label>
-                <input type="number" class="form-control" style="width:80px;" @bind="quantity" min="1" max="@product.StockQuantity" />
+            <!-- Qty + CTA -->
+            <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center">
+                <div class="qty-stepper">
+                    <button class="qty-stepper__btn" @onclick="DecreaseQty">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><path d="M5 12h14"/></svg>
+                    </button>
+                    <span class="qty-stepper__val">@quantity</span>
+                    <button class="qty-stepper__btn" @onclick="IncreaseQty" disabled="@(quantity >= product.StockQuantity)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><path d="M12 5v14M5 12h14"/></svg>
+                    </button>
+                </div>
+                <AuthorizeView>
+                    <Authorized>
+                        <button class="btn btn--primary btn--lg" style="flex:1" @onclick="AddToCart" disabled="@(adding || product.StockQuantity == 0)">
+                            @(adding ? "Adding…" : $"Add to cart · ${(product.Price * quantity):F2}")
+                        </button>
+                    </Authorized>
+                    <NotAuthorized>
+                        <a href="/login" class="btn btn--primary btn--lg" style="flex:1">Login to purchase</a>
+                    </NotAuthorized>
+                </AuthorizeView>
             </div>
 
-            <AuthorizeView>
-                <Authorized>
-                    <button class="btn btn-primary" @onclick="AddToCart" disabled="@adding">
-                        @(adding ? "Adding..." : "Add to Cart")
-                    </button>
-                </Authorized>
-                <NotAuthorized>
-                    <a href="/login" class="btn btn-outline-primary">Login to purchase</a>
-                </NotAuthorized>
-            </AuthorizeView>
-
-            <button class="btn btn-link ms-2" @onclick="GoBack">← Back</button>
+            <button class="btn btn--ghost btn--sm" @onclick="GoBack" style="margin-top:8px">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><path d="M19 12H5m6-6-6 6 6 6"/></svg>
+                Back to shop
+            </button>
         </div>
-    </div>
+    </section>
 }
 
 @code {
@@ -64,6 +132,9 @@ else
     }
 
     private void GoBack() => Nav.NavigateTo("/products");
+
+    private void DecreaseQty() { if (quantity > 1) quantity--; }
+    private void IncreaseQty() { if (product != null && quantity < product.StockQuantity) quantity++; }
 
     private async Task AddToCart()
     {
