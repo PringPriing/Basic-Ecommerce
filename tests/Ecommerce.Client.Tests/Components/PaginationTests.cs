@@ -1,5 +1,4 @@
 using Bunit;
-using Bunit.TestDoubles;
 using Ecommerce.Client.Shared;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;
@@ -16,8 +15,8 @@ public class PaginationTests : TestContext
             .Add(p => p.TotalPages, 3)
             .Add(p => p.OnPageChanged, EventCallback.Factory.Create<int>(this, _ => { })));
 
-        var pageButtons = cut.FindAll("li.page-item");
-        pageButtons.Should().HaveCount(5); // prev + 3 pages + next
+        var buttons = cut.FindAll("div.pagination button");
+        buttons.Should().HaveCount(5); // prev + 3 pages + next
     }
 
     [Fact]
@@ -28,8 +27,8 @@ public class PaginationTests : TestContext
             .Add(p => p.TotalPages, 3)
             .Add(p => p.OnPageChanged, EventCallback.Factory.Create<int>(this, _ => { })));
 
-        var prev = cut.Find("li.page-item:first-child");
-        prev.ClassList.Should().Contain("disabled");
+        var prev = cut.Find("div.pagination button:first-child");
+        prev.HasAttribute("disabled").Should().BeTrue();
     }
 
     [Fact]
@@ -40,8 +39,8 @@ public class PaginationTests : TestContext
             .Add(p => p.TotalPages, 3)
             .Add(p => p.OnPageChanged, EventCallback.Factory.Create<int>(this, _ => { })));
 
-        var next = cut.Find("li.page-item:last-child");
-        next.ClassList.Should().Contain("disabled");
+        var next = cut.Find("div.pagination button:last-child");
+        next.HasAttribute("disabled").Should().BeTrue();
     }
 
     [Fact]
@@ -52,8 +51,8 @@ public class PaginationTests : TestContext
             .Add(p => p.TotalPages, 3)
             .Add(p => p.OnPageChanged, EventCallback.Factory.Create<int>(this, _ => { })));
 
-        var pageItems = cut.FindAll("li.page-item");
-        pageItems[2].ClassList.Should().Contain("active"); // index 0=prev, 1=page1, 2=page2
+        var buttons = cut.FindAll("div.pagination button");
+        buttons[2].ClassList.Should().Contain("is-active"); // index 0=prev, 1=page1, 2=page2
     }
 
     [Fact]
@@ -65,7 +64,7 @@ public class PaginationTests : TestContext
             .Add(p => p.TotalPages, 3)
             .Add(p => p.OnPageChanged, EventCallback.Factory.Create<int>(this, pg => invokedPage = pg)));
 
-        await cut.Find("li.page-item:last-child button").ClickAsync(new());
+        await cut.Find("div.pagination button:last-child").ClickAsync(new());
 
         invokedPage.Should().Be(2);
     }
