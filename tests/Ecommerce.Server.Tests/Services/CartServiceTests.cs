@@ -26,9 +26,9 @@ public class CartServiceTests : IDisposable
         _db.SaveChanges();
     }
 
-    private async Task<Product> SeedProduct(string name, decimal price)
+    private async Task<Product> SeedProduct(string name, decimal price, int stock = 100, bool isActive = true)
     {
-        var product = new Product { Name = name, Description = "Desc", Price = price, IsActive = true };
+        var product = new Product { Name = name, Description = "Desc", Price = price, StockQuantity = stock, IsActive = isActive };
         _db.Products.Add(product);
         await _db.SaveChangesAsync();
         return product;
@@ -130,6 +130,47 @@ public class CartServiceTests : IDisposable
         var cart = await _sut.GetCartAsync(UserId);
 
         cart.Total.Should().Be(55m); // 3*5 + 2*20
+    }
+
+    [Fact]
+    public async Task AddItemAsync_Throws_WhenProductDoesNotExist()
+    {
+        var act = () => _sut.AddItemAsync(UserId, new AddToCartRequest { ProductId = 9999, Quantity = 1 });
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Product not found.");
+    }
+
+    [Fact]
+    public async Task AddItemAsync_Throws_WhenProductIsInactive()
+    {
+        var product = await SeedProduct("Discontinued", 5m, stock: 50, isActive: false);
+
+        var act = () => _sut.AddItemAsync(UserId, new AddToCartRequest { ProductId = product.Id, Quantity = 1 });
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Product is no longer available.");
+    }
+
+    [Fact]
+    public async Task AddItemAsync_Throws_WhenQuantityExceedsStock()
+    {
+        var product = await SeedProduct("LimitedEdition", 10m, stock: 3);
+
+        var act = () => _sut.AddItemAsync(UserId, new AddToCartRequest { ProductId = product.Id, Quantity = 4 });
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task AddItemAsync_Throws_WhenIncrementWouldExceedStock()
+    {
+        var product = await SeedProduct("LimitedEdition", 10m, stock: 3);
+        await _sut.AddItemAsync(UserId, new AddToCartRequest { ProductId = product.Id, Quantity = 2 });
+
+        var act = () => _sut.AddItemAsync(UserId, new AddToCartRequest { ProductId = product.Id, Quantity = 2 });
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
     public void Dispose() => _db.Dispose();

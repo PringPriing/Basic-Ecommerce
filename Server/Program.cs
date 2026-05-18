@@ -2,6 +2,7 @@ using System.Text;
 using Ecommerce.Server.Data;
 using Ecommerce.Server.Data.Models;
 using Ecommerce.Server.HealthChecks;
+using Ecommerce.Server.Infrastructure;
 using Ecommerce.Server.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -25,7 +26,12 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
-var jwtKey = builder.Configuration["Jwt:Key"]!;
+var jwtKey = builder.Configuration["Jwt:Key"];
+if (string.IsNullOrEmpty(jwtKey) || jwtKey.Length < 32)
+    throw new InvalidOperationException(
+        "Jwt:Key is missing or fewer than 32 characters. " +
+        "Set it via user-secrets: dotnet user-secrets set \"Jwt:Key\" \"<32+ char random key>\"");
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -41,7 +47,7 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey!))
     };
 });
 
@@ -53,6 +59,9 @@ builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
 builder.Services.AddScoped<ICheckoutService, CheckoutService>();
+
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<ApplicationDbContext>("database")
@@ -88,6 +97,10 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+// Handles API routes via GlobalExceptionHandler (ProblemDetails JSON).
+// Non-API exceptions fall back to the /Error Razor page.
+app.UseExceptionHandler("/Error");
+
 if (app.Environment.IsDevelopment())
 {
     app.UseWebAssemblyDebugging();
@@ -96,7 +109,6 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
 

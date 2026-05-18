@@ -13,8 +13,8 @@ public class BlobStorageHealthCheck : IHealthCheck
     {
         try
         {
-            var connStr = _config["AzureBlobStorage:ConnectionString"];
-            var containerName = _config["AzureBlobStorage:ContainerName"];
+            var connStr = _config["BlobStorage:ConnectionString"];
+            var containerName = _config["BlobStorage:ContainerName"];
             var client = new BlobContainerClient(connStr, containerName);
             await client.ExistsAsync(ct);
             return HealthCheckResult.Healthy();

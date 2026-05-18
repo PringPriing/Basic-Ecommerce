@@ -24,13 +24,24 @@ public class CartService : ICartService
 
     public async Task<CartItemDto> AddItemAsync(string userId, AddToCartRequest request)
     {
+        var product = await _db.Products.FindAsync(request.ProductId)
+            ?? throw new InvalidOperationException("Product not found.");
+
+        if (!product.IsActive)
+            throw new InvalidOperationException("Product is no longer available.");
+
         var existing = await _db.CartItems
             .Include(ci => ci.Product)
             .FirstOrDefaultAsync(ci => ci.UserId == userId && ci.ProductId == request.ProductId);
 
+        var newQuantity = (existing?.Quantity ?? 0) + request.Quantity;
+        if (newQuantity > product.StockQuantity)
+            throw new InvalidOperationException(
+                $"Only {product.StockQuantity} unit(s) available; cart already contains {existing?.Quantity ?? 0}.");
+
         if (existing != null)
         {
-            existing.Quantity += request.Quantity;
+            existing.Quantity = newQuantity;
             await _db.SaveChangesAsync();
             return ToItemDto(existing);
         }

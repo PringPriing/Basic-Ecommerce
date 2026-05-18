@@ -77,5 +77,5 @@ Required keys in `appsettings.json` (or environment overrides):
 | `Jwt:Key` | HMAC-SHA256 signing key (≥32 chars) |
 | `Jwt:Issuer` / `Jwt:Audience` | JWT validation values |
 | `Jwt:ExpiresHours` | Token lifetime (default `24`) |
-| `AzureBlobStorage:ConnectionString` | Azure Storage account |
-| `AzureBlobStorage:ContainerName` | Blob container (default `product-images`) |
+| `BlobStorage:ConnectionString` | Azure Storage account |
+| `BlobStorage:ContainerName` | Blob container (default `product-images`) |

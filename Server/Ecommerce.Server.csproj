@@ -4,6 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>ecommerce-server-a3f8c1d2-4b7e-4f9a-8c2d-1e5f6a7b8c9d</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

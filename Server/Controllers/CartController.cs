@@ -22,8 +22,10 @@ public class CartController : ControllerBase
         Ok(await _cartService.GetCartAsync(UserId));
 
     [HttpPost]
-    public async Task<ActionResult<CartItemDto>> AddItem(AddToCartRequest request) =>
-        Ok(await _cartService.AddItemAsync(UserId, request));
+    public async Task<ActionResult<CartItemDto>> AddItem(AddToCartRequest request)
+    {
+        return Ok(await _cartService.AddItemAsync(UserId, request));
+    }
 
     [HttpPut("{itemId:int}")]
     public async Task<ActionResult<CartItemDto>> UpdateItem(int itemId, UpdateCartItemRequest request)

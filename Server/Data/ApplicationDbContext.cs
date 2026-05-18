@@ -48,6 +48,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .HasForeignKey(ci => ci.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.Entity<CartItem>()
+            .HasIndex(ci => new { ci.UserId, ci.ProductId })
+            .IsUnique();
+
         builder.Entity<Order>()
             .HasOne(o => o.User).WithMany(u => u.Orders)
             .HasForeignKey(o => o.UserId)
