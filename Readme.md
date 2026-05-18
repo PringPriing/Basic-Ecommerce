@@ -60,29 +60,35 @@ git clone <repository-url>
 cd Ecommerce
 ```
 
-### 2. Configure the server
+### 2. Configure secrets (user-secrets)
 
-Copy `Server/appsettings.json` and create `Server/appsettings.Development.json` (or update the existing file) with your own values:
+All sensitive values are kept out of source control using [.NET User Secrets](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets). Run the following commands from the repo root — the app will refuse to start if `Jwt:Key` is missing or shorter than 32 characters.
 
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=<your-server>;Initial Catalog=EcommerceDb;User ID=<user>;Password=<password>;Encrypt=True;"
-  },
-  "Jwt": {
-    "Key": "<at-least-32-character-secret-key>",
-    "Issuer": "EcommerceApp",
-    "Audience": "EcommerceApp",
-    "ExpiresHours": "24"
-  },
-  "AzureBlobStorage": {
-    "ConnectionString": "<your-azure-storage-connection-string>",
-    "ContainerName": "product-images"
-  }
-}
+```bash
+cd Server
+
+# Database
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" \
+  "Server=(localdb)\mssqllocaldb;Database=EcommerceDb;Trusted_Connection=True;MultipleActiveResultSets=true"
+
+# JWT signing key — use a random string of 32+ characters
+dotnet user-secrets set "Jwt:Key" "<your-32+-character-secret-key>"
+
+# Azure Blob Storage
+dotnet user-secrets set "BlobStorage:ConnectionString" "<your-azure-storage-connection-string>"
+
+# Stripe (leave empty if not using checkout)
+dotnet user-secrets set "Stripe:SecretKey" "<your-stripe-secret-key>"
+dotnet user-secrets set "Stripe:WebhookSecret" "<your-stripe-webhook-secret>"
 ```
 
-> **Security:** Never commit real credentials. Add `appsettings.Development.json` to `.gitignore` or use [.NET User Secrets](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets).
+Verify the stored values at any time:
+
+```bash
+dotnet user-secrets list --project Server
+```
+
+Non-secret settings (`Jwt:Issuer`, `Jwt:Audience`, `BlobStorage:ContainerName`, etc.) are already set in `Server/appsettings.json` and do not need to be overridden for local development.
 
 ### 3. Apply database migrations
 
