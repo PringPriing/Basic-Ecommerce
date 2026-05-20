@@ -26,6 +26,9 @@ builder.Services.AddScoped(sp =>
     };
 });
 
+builder.Services.AddHttpClient("RefreshClient", c =>
+    c.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress));
+
 builder.Services.AddScoped<ToastService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ProductApiService>();

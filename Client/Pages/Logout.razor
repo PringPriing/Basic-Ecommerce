@@ -1,10 +1,12 @@
 @page "/logout"
 @inject CustomAuthStateProvider AuthProvider
+@inject HttpClient Http
 @inject NavigationManager Nav
 
 @code {
     protected override async Task OnInitializedAsync()
     {
+        await Http.PostAsync("api/auth/logout", null);
         await AuthProvider.MarkAsLoggedOutAsync();
         Nav.NavigateTo("/");
     }

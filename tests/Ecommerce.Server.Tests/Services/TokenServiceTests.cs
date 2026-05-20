@@ -1,9 +1,11 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Ecommerce.Server.Data;
 using Ecommerce.Server.Data.Models;
 using Ecommerce.Server.Services;
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Moq;
 
@@ -23,7 +25,8 @@ public class TokenServiceTests
                 ["Jwt:Key"] = "TestSecretKeyThatIsAtLeast32CharsLong!",
                 ["Jwt:Issuer"] = "TestIssuer",
                 ["Jwt:Audience"] = "TestAudience",
-                ["Jwt:ExpiresHours"] = "24"
+                ["Jwt:ExpiresMinutes"] = "15",
+                ["Jwt:RefreshTokenExpiryDays"] = "7"
             })
             .Build();
 
@@ -31,7 +34,12 @@ public class TokenServiceTests
         _userManagerMock = new Mock<UserManager<ApplicationUser>>(
             store.Object, null!, null!, null!, null!, null!, null!, null!, null!);
 
-        _sut = new TokenService(_config, _userManagerMock.Object);
+        var dbOptions = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        var context = new ApplicationDbContext(dbOptions);
+
+        _sut = new TokenService(_config, _userManagerMock.Object, context);
     }
 
     [Fact]
@@ -81,7 +89,7 @@ public class TokenServiceTests
     }
 
     [Fact]
-    public async Task GenerateTokenAsync_TokenHas24HourExpiry()
+    public async Task GenerateTokenAsync_TokenHas15MinuteExpiry()
     {
         var user = new ApplicationUser
         {
@@ -94,9 +102,9 @@ public class TokenServiceTests
         _userManagerMock.Setup(m => m.GetRolesAsync(user))
             .ReturnsAsync(new List<string>());
 
-        var before = DateTime.UtcNow.AddHours(23.9);
+        var before = DateTime.UtcNow.AddMinutes(14.9);
         var token = await _sut.GenerateTokenAsync(user);
-        var after = DateTime.UtcNow.AddHours(24.1);
+        var after = DateTime.UtcNow.AddMinutes(15.1);
 
         var handler = new JwtSecurityTokenHandler();
         var jwt = handler.ReadJwtToken(token);

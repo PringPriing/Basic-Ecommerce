@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Headers;
 
 namespace Ecommerce.Client.Auth;
@@ -16,6 +17,11 @@ public class AuthTokenHandler : DelegatingHandler
         if (!string.IsNullOrWhiteSpace(token))
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        return await base.SendAsync(request, cancellationToken);
+        var response = await base.SendAsync(request, cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
+            await _authProvider.MarkAsLoggedOutAsync();
+
+        return response;
     }
 }
