@@ -1,0 +1,41 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "${SA_PASSWORD:-Strong_Passw0rd!}"
+      MSSQL_PID: "Express"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"${SA_PASSWORD:-Strong_Passw0rd!}\" -Q 'SELECT 1' -No -C"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Production"
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=EcommerceDb;User Id=sa;Password=${SA_PASSWORD:-Strong_Passw0rd!};TrustServerCertificate=True"
+      Jwt__Key: "${JWT_KEY}"
+      Jwt__Issuer: "EcommerceApp"
+      Jwt__Audience: "EcommerceApp"
+      Jwt__ExpiresMinutes: "15"
+      Jwt__RefreshTokenExpiryDays: "7"
+      BlobStorage__ConnectionString: "${BLOB_STORAGE_CONNECTION_STRING}"
+      BlobStorage__ContainerName: "product-images"
+      Stripe__SecretKey: "${STRIPE_SECRET_KEY}"
+      Stripe__Currency: "usd"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+
+volumes:
+  sqlserver_data:
